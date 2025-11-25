@@ -53,6 +53,13 @@
 #include "lilygoT_HMI.h"
 #elif defined(SPOTPEAR)
 #include "spotpearKeychain.h"
+#elif defined(TFT_ESP32_S3_BOARD)
+#include "esp32TftS3Board.h"
+#elif defined(TFT_ESP32_S3_ST7789)
+#include "esp32TftS3St7789.h"
+#elif defined(TFT_ESP32_ST7789)
+#include "tftEsp32St7789.h"
+
 
 #else
 #error "No device defined"
