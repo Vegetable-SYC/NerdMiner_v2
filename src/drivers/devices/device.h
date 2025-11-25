@@ -59,7 +59,8 @@
 #include "esp32TftS3St7789.h"
 #elif defined(TFT_ESP32_ST7789)
 #include "tftEsp32St7789.h"
-
+#elif defined(TFT_ESP32_ST7789_IPS)
+#include "tftEsp32St7789.h"
 
 #else
 #error "No device defined"

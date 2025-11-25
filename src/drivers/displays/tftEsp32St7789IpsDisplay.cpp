@@ -1,6 +1,6 @@
 #include "displayDriver.h"
 
-#if defined ESP32_2432S028R || ESP32_2432S028_2USB
+#if defined(TFT_ESP32_ST7789_IPS)
 
 #include <TFT_eSPI.h>
 #include <TFT_eTouch.h>
@@ -55,21 +55,24 @@ void esp32_2432S028R_Init(void)
   // getChipInfo();  
   tft.init();
   if (nvMem.loadConfig(&Settings))
-    {      
-     // Serial.print("Invert Colors: ");
-     // Serial.println(Settings.invertColors);  
-      invertColors = Settings.invertColors;           
-    }  
-  tft.invertDisplay(invertColors);
+  {      
+    // Serial.print("Invert Colors: ");
+    // Serial.println(Settings.invertColors);  
+    invertColors = Settings.invertColors;           
+  }  
+  tft.invertDisplay(!invertColors);
   tft.setRotation(1);    
   tft.setSwapBytes(true); // Swap the colour byte order when rendering
-  if (invertColors) {
-    tft.writecommand(ILI9341_GAMMASET);
-    tft.writedata(2);
-    delay(120);
-    tft.writecommand(ILI9341_GAMMASET); //Gamma curve selected
-    tft.writedata(1); 
-  }
+
+  tft.writecommand(0x36); // MADCTL
+  tft.writedata(0xA0 | 0x08); 
+//   if (invertColors) {
+//     tft.writecommand(ILI9341_GAMMASET);
+//     tft.writedata(2);
+//     delay(120);
+//     tft.writecommand(ILI9341_GAMMASET); //Gamma curve selected
+//     tft.writedata(1); 
+//   }
   hSPI.begin(TOUCH_CLK, TOUCH_MISO, TOUCH_MOSI, ETOUCH_CS);
   touch.init();
 
@@ -569,18 +572,17 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
     if (currentScreen != currentDisplayDriver->current_cyclic_screen) hasChangedScreen ^= true;
     currentScreen = currentDisplayDriver->current_cyclic_screen;
 
-  switch (mMonitor.NerdStatus)
-  {
-      case NM_waitingConfig:
-      digitalWrite(17, LOW); // LED encendido de forma continua
-      break;
+    switch (mMonitor.NerdStatus)
+    {
+        case NM_waitingConfig:
+        digitalWrite(17, LOW); // LED encendido de forma continua
+        break;
 
-      case NM_Connecting:
-      digitalWrite(17, HIGH);
-      digitalWrite(16, LOW); // LED encendido de forma continua
-      break;
-  }
-
+        case NM_Connecting:
+        digitalWrite(17, HIGH);
+        digitalWrite(16, LOW); // LED encendido de forma continua
+        break;
+    }
 }
 
 CyclicScreenFunction esp32_2432S028RCyclicScreens[] = {esp32_2432S028R_MinerScreen, esp32_2432S028R_ClockScreen, esp32_2432S028R_GlobalHashScreen, esp32_2432S028R_BTCprice};

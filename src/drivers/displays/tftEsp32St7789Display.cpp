@@ -410,13 +410,13 @@ void tftEsp32St7789_DoLedStuff(unsigned long frame)
   }
   switch (mMonitor.NerdStatus)
   {
-    case NM_waitingConfig:
-      digitalWrite(17, HIGH); // LED encendido de forma continua
+      case NM_waitingConfig:
+      digitalWrite(17, LOW); // LED encendido de forma continua
       break;
 
-    case NM_Connecting:
-      digitalWrite(16, HIGH);
-      digitalWrite(17, LOW); // LED encendido de forma continua
+      case NM_Connecting:
+      digitalWrite(17, HIGH);
+      digitalWrite(16, LOW); // LED encendido de forma continua
       break;
   }
 }
