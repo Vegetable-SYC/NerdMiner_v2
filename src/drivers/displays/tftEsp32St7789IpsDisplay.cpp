@@ -101,7 +101,7 @@ void esp32_2432S028R_Init(void)
   pinMode(LED_PIN, OUTPUT);
   pinMode(LED_PIN_B, OUTPUT);
   pinMode(LED_PIN_G, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+  digitalWrite(LED_PIN, HIGH);
   digitalWrite(LED_PIN_B, HIGH);
   digitalWrite(LED_PIN_G, HIGH);
   pData.bestDifficulty = "0";
@@ -154,26 +154,52 @@ bool createBackgroundSprite(int16_t wdt, int16_t hgt){  // Set the background an
 
 extern unsigned long mPoolUpdate;
 
+// 修复后的 printPoolData，彻底解决切换卡顿
 void printPoolData(){
-  if ((hasChangedScreen) || (mPoolUpdate == 0) || (millis() - mPoolUpdate > UPDATE_POOL_min * 60 * 1000)){     
+  bool needUpdateData = false;
+  bool needDraw = false;
+
+  // 1. 判断是否需要联网更新 (仅根据时间或从未更新过，不再因为切换屏幕而强制联网)
+  if ((mPoolUpdate == 0) || (millis() - mPoolUpdate > UPDATE_POOL_min * 60 * 1000)) {
+      needUpdateData = true;
+  }
+
+  // 2. 如果是第一次启动或者时间到了，执行联网 (这一步是耗时操作)
+  if (needUpdateData) {
       if (Settings.PoolAddress != "tn.vkbit.com") { 
-          pData = getPoolData();             
-          background.createSprite(320,50); //Background Sprite
+          pData = getPoolData(); 
+      } else {
+          // 如果是测试网，手动填充假数据
+          pData.bestDifficulty = "UNKNOWN";
+          pData.workersHash = "UNKNOWN";
+          pData.workersCount = 1;
+      }
+      mPoolUpdate = millis(); // 重置计时器
+      needDraw = true;        // 数据变了，需要重绘
+  }
+
+  // 3. 如果只是切换了屏幕 (hasChangedScreen)，或者刚刚联网拿到了新数据，就需要画图
+  // 注意：这里把 Drawing 和 Fetching 分开了
+  if (hasChangedScreen || needDraw) {
+      // 这里的绘制逻辑只会占用几十毫秒，肉眼无感
+      if (Settings.PoolAddress != "tn.vkbit.com") { 
+          background.createSprite(320,50);
           if (!background.created()) {    
             Serial.println("###### POOL SPRITE ERROR ######");
-          // Serial.printf("Pool data W:%d H:%s D:%s\n", pData.workersCount, pData.workersHash, pData.bestDifficulty);
             printheap();        
           }       
           background.setSwapBytes(true);
+          
           if (bottomScreenBlue) {
             background.pushImage(0, -20, 320, 70, bottonPoolScreen);
-            tft.pushImage(0,170,320,20,bottonPoolScreen);      
+            // 只有需要强制刷新全屏区域时才画到底层TFT，避免闪烁
+            if(hasChangedScreen) tft.pushImage(0,170,320,20,bottonPoolScreen);      
           } else {
             background.pushImage(0, -20, 320, 70, bottonPoolScreen_g);
-            tft.pushImage(0,170,320,20,bottonPoolScreen_g);
+            if(hasChangedScreen) tft.pushImage(0,170,320,20,bottonPoolScreen_g);
           }
                 
-          render.setDrawer(background); // Link drawing object to background instance (so font will be rendered on background)
+          render.setDrawer(background);
           render.setLineSpaceRatio(1);
           
           render.setFontSize(24);
@@ -186,30 +212,20 @@ void printPoolData(){
           background.pushSprite(0,190);      
           background.deleteSprite();
       } else {
-        pData.bestDifficulty = "TESTNET";
-        pData.workersHash = "TESTNET";
-        pData.workersCount = 1;
+        // TESTNET 的绘制逻辑
         tft.fillRect(0,170,320,70, TFT_DARKGREEN);        
-        background.createSprite(320,40); //Background Sprite
+        background.createSprite(320,40);
         background.fillSprite(TFT_DARKGREEN);
-          if (!background.created()) {    
-            Serial.println("###### POOL SPRITE ERROR ######");
-          // Serial.printf("Pool data W:%d H:%s D:%s\n", pData.workersCount, pData.workersHash, pData.bestDifficulty);
-            printheap();        
-          }
         background.setFreeFont(FF24);
         background.setTextDatum(TL_DATUM);
         background.setTextSize(1);
         background.setTextColor(TFT_WHITE, TFT_DARKGREEN);        
-        background.drawString("TESTNET", 50, 0, GFXFF);
+        background.drawString("UNKNOWN", 50, 0, GFXFF);
         background.pushSprite(0,185);  
-        mPoolUpdate = millis();
-        Serial.println("Testnet");
         background.deleteSprite();
       }
   }
 }
-
 
 
 void esp32_2432S028R_MinerScreen(unsigned long mElapsed)
@@ -576,6 +592,7 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
     {
         case NM_waitingConfig:
         digitalWrite(17, LOW); // LED encendido de forma continua
+        digitalWrite(16, HIGH);
         break;
 
         case NM_Connecting:
