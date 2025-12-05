@@ -61,11 +61,12 @@ void esp32_2432S028R_Init(void)
     invertColors = Settings.invertColors;           
   }  
   tft.invertDisplay(!invertColors);
-  tft.setRotation(1);    
+  tft.setRotation(1); 
   tft.setSwapBytes(true); // Swap the colour byte order when rendering
-
+  // tft.writecommand(0x20);
   tft.writecommand(0x36); // MADCTL
-  tft.writedata(0xA0 | 0x08); 
+  tft.writedata(0x68); 
+
 //   if (invertColors) {
 //     tft.writecommand(ILI9341_GAMMASET);
 //     tft.writedata(2);
@@ -73,6 +74,37 @@ void esp32_2432S028R_Init(void)
 //     tft.writecommand(ILI9341_GAMMASET); //Gamma curve selected
 //     tft.writedata(1); 
 //   }
+  tft.writecommand(0xE0); // Positive Gamma Control
+  tft.writedata(0xD0);
+  tft.writedata(0x04);
+  tft.writedata(0x0C);
+  tft.writedata(0x11);
+  tft.writedata(0x13);
+  tft.writedata(0x2C);
+  tft.writedata(0x3F);
+  tft.writedata(0x44);
+  tft.writedata(0x51);
+  tft.writedata(0x2F);
+  tft.writedata(0x1F);
+  tft.writedata(0x1F);
+  tft.writedata(0x20);
+  tft.writedata(0x23);
+
+  tft.writecommand(0xE1); // Negative Gamma Control
+  tft.writedata(0xD0);
+  tft.writedata(0x04);
+  tft.writedata(0x0C);
+  tft.writedata(0x11);
+  tft.writedata(0x13);
+  tft.writedata(0x2C);
+  tft.writedata(0x3F);
+  tft.writedata(0x44);
+  tft.writedata(0x51);
+  tft.writedata(0x2F);
+  tft.writedata(0x1F);
+  tft.writedata(0x1F);
+  tft.writedata(0x20);
+  tft.writedata(0x23);
   hSPI.begin(TOUCH_CLK, TOUCH_MISO, TOUCH_MOSI, ETOUCH_CS);
   touch.init();
 
